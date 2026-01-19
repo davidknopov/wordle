@@ -44,14 +44,7 @@ In our version of Wordle, there are 2 key differences from the original:
   - View their guess history for the current game
   - See when they've won or lost
 
-## Deliverable
-
-A GitHub repository containing:
-- A working backend API
-- A working frontend application
-- This README updated with any additional setup instructions
-
-Use of AI is allowed and encouraged for this assessment.
+**Use of AI is allowed and encouraged for this assessment.**
 
 ---
 
@@ -125,8 +118,3 @@ API documentation is automatically available at `http://localhost:8000/docs`.
 4. Build your UI in the `frontend/src/` directory
 5. The frontend is configured to make requests to `http://localhost:8000`
 
-### Tips
-
-- Use FastAPI's automatic documentation (`/docs`) to test your API endpoints
-- The backend already has CORS configured to accept requests from the frontend
-- Consider creating separate files/modules as your code grows (e.g., `models.py`, `game_logic.py`)
