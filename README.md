@@ -1,120 +1,99 @@
-# Wordle Full Stack Assessment
+# Wordle Clone
 
-## Background
+A full-stack Wordle implementation with configurable word lengths (5-8 letters), built with FastAPI and React.
 
-Wordle is a simple game in which you have to guess a five-letter word. You get six guesses, learning a little more information with each guess, and eventually narrow your guesses down to find the answer.
+## Features
 
-You can play an online version of Wordle [here](https://www.nytimes.com/games/wordle/index.html).
+- 🎮 **Multiple Games**: Create and play as many games as you want
+- 📏 **Configurable Word Length**: Choose 5-8 letter words (with N+1 guesses)
+- ⌨️ **Dual Input**: On-screen keyboard and physical keyboard support
+- 🎨 **Responsive Design**: Works on desktop and mobile
+- ✅ **52 Tests**: Comprehensive test coverage
 
-## Rules
+## Quick Start
 
-1. Letters that are in the answer and in the right place turn green.
-2. Letters that are in the answer but in the wrong place turn yellow.
-3. Letters that are not in the answer turn gray.
-4. Answers are never plural.
-5. Letters can appear more than once. So if your guess includes two of one letter, they may both turn yellow, both turn green, or one could be yellow and the other green.
-6. Each guess must be a valid word in Wordle's dictionary. You can't guess ABCDE, for instance.
-7. You do not have to include correct letters in subsequent guesses.
-8. You have six guesses to solve the Wordle.
-
-## Goal
-
-Your goal is to design and build a full stack Wordle application with both a REST API backend and a React frontend.
-
-In our version of Wordle, there are 2 key differences from the original:
-
-1. **Multiple Games**: The user can create and play as many games as they want.
-2. **Configurable Word Length**: The user can configure the number of letters in the target word to be anywhere between 5 to 8 letters, but they will always only have N+1 turns to guess the word. For instance, traditional Wordle involves guessing a five-letter word over six turns, but in our version, the user can pick 7 as the number of letters and get 8 turns to guess the word.
-
-### Backend Requirements
-
-- Build a REST API that supports:
-  - Creating a new game (with configurable word length 5-8)
-  - Submitting guesses and receiving feedback (green/yellow/gray for each letter)
-  - Retrieving game state
-  - Validating that guesses are real words
-- Use appropriate data storage for game state
-
-### Frontend Requirements
-
-- Build a React UI that allows users to:
-  - Start a new game with a selected word length (5-8 letters)
-  - Enter guesses via an on-screen keyboard or physical keyboard
-  - See feedback for each guess (green/yellow/gray letters)
-  - View their guess history for the current game
-  - See when they've won or lost
-
-**Use of AI is allowed and encouraged for this assessment.**
-
----
-
-## Getting Started
-
-This repository includes boilerplate code to help you get started quickly.
-
-### Project Structure
-
+### Backend
+```bash
+cd backend
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+uvicorn main:app --reload
 ```
-wordle-starter/
-├── frontend/           # React application (Vite)
-├── backend/            # FastAPI application
-│   ├── main.py
-│   ├── requirements.txt
-│   └── Dockerfile
-├── docker-compose.yml
-└── README.md
-```
+API available at http://localhost:8000
 
 ### Frontend
-
-The frontend is a React application built with Vite. It is pre-configured with CORS support to communicate with the backend.
-
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
+App available at http://localhost:5173
 
-The frontend will be available at `http://localhost:5173`.
+## API Endpoints
 
-**Key files to modify:**
-- `frontend/src/App.jsx` - Main application component, start building your UI here
-- `frontend/src/App.css` - Application styles
-- Add new components in `frontend/src/components/` as needed
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/games` | Create new game with `{word_length: 5-8}` |
+| POST | `/games/{id}/guesses` | Submit guess, returns feedback |
+| GET | `/games/{id}` | Get game state |
 
-### Backend
+## Project Structure
 
-The backend is a FastAPI application with CORS already configured for the frontend. Run it using Docker Compose:
-
-```bash
-docker compose up --build
+```
+wordle-starter/
+├── backend/
+│   ├── main.py          # FastAPI routes
+│   ├── models.py        # Pydantic schemas
+│   ├── game.py          # Game model
+│   ├── feedback.py      # Scoring algorithm
+│   ├── words.py         # Word validation
+│   ├── store.py         # Game storage
+│   ├── test_*.py        # Backend tests (34)
+│   └── words_*.txt      # Word lists
+├── frontend/
+│   ├── src/
+│   │   ├── App.jsx      # Main component
+│   │   ├── components/  # GameGrid, Keyboard
+│   │   └── test/        # Frontend tests (18)
+│   └── package.json
+├── DESIGN.md            # Architecture & tradeoffs
+├── REQUIREMENTS.md      # Test traceability matrix
+└── TODO.md              # Future improvements
 ```
 
-This will build and start the backend container with hot-reloading enabled. The API will be available at `http://localhost:8000`.
-
-To run in detached mode (background):
+## Running Tests
 
 ```bash
-docker compose up -d --build
+# Backend (34 tests)
+cd backend && source venv/bin/activate && pytest -v
+
+# Frontend (18 tests)
+cd frontend && npm test
+
+# All tests
+cd backend && source venv/bin/activate && pytest && cd ../frontend && npm test
 ```
 
-To stop the container:
+## Design Decisions
 
-```bash
-docker compose down
-```
+See [DESIGN.md](DESIGN.md) for detailed architecture documentation including:
+- API design rationale
+- Storage layer tradeoffs
+- Feedback algorithm explanation
+- Frontend state management choices
 
-API documentation is automatically available at `http://localhost:8000/docs`.
+## Game Rules
 
-**Key files to modify:**
-- `backend/main.py` - Add your API endpoints here
-- `backend/requirements.txt` - Add any additional Python dependencies
+1. 🟩 **Green** = Letter is correct and in the right position
+2. 🟨 **Yellow** = Letter is in the word but wrong position  
+3. ⬜ **Gray** = Letter is not in the word
+4. Words must be valid English words
+5. Answers are never plural
+6. You get N+1 guesses for an N-letter word
 
-### Development Workflow
+## Tech Stack
 
-1. Start the backend with `docker compose up --build`
-2. Start the frontend with `cd frontend && npm install && npm run dev`
-3. Build your API endpoints in `backend/main.py`
-4. Build your UI in the `frontend/src/` directory
-5. The frontend is configured to make requests to `http://localhost:8000`
-
+- **Backend**: Python, FastAPI, Pydantic
+- **Frontend**: React, Vite, Vitest
+- **Testing**: pytest, React Testing Library

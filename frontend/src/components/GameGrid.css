@@ -1,0 +1,43 @@
+.grid {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(4px, 1vw, 5px);
+  margin: 16px 0;
+  width: 100%;
+  align-items: center;
+}
+
+.row {
+  display: flex;
+  gap: clamp(4px, 1vw, 5px);
+  justify-content: center;
+}
+
+.cell {
+  --cell-size: min(52px, calc((100vw - 60px) / var(--word-length)));
+  width: var(--cell-size);
+  height: var(--cell-size);
+  border: 2px solid #3a3a3c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(18px, 5vw, 28px);
+  font-weight: bold;
+  text-transform: uppercase;
+  color: white;
+}
+
+.cell.correct {
+  background-color: #538d4e;
+  border-color: #538d4e;
+}
+
+.cell.present {
+  background-color: #b59f3b;
+  border-color: #b59f3b;
+}
+
+.cell.absent {
+  background-color: #3a3a3c;
+  border-color: #3a3a3c;
+}
