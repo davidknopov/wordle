@@ -1,107 +1,89 @@
 # Wordle Clone
 
-A full-stack Wordle clone with configurable word lengths (5-8 letters).
+A full-stack Wordle implementation with configurable word lengths (5-8 letters).
 
-## Project Structure
+**[Live Demo](http://localhost:5173)** | **[Design Doc](docs/DESIGN.md)** | **[Requirements](docs/REQUIREMENTS.md)**
 
-```
-wordle/
-├── backend/
-│   ├── app/
-│   │   ├── main.py              # FastAPI application entry point
-│   │   ├── routes/
-│   │   │   └── games.py         # Game API endpoints
-│   │   ├── models/
-│   │   │   ├── game.py          # Domain models (LetterStatus, Guess)
-│   │   │   └── schemas.py       # Pydantic request/response schemas
-│   │   ├── services/
-│   │   │   ├── feedback.py      # Two-pass feedback algorithm
-│   │   │   ├── words.py         # Word validation and selection
-│   │   │   └── game_service.py  # Game entity and repository
-│   │   └── data/
-│   │       └── words_*.txt      # Word lists by length
-│   ├── tests/
-│   │   ├── test_api.py          # API integration tests
-│   │   ├── test_feedback.py     # Feedback algorithm unit tests
-│   │   └── test_words.py        # Word service unit tests
-│   └── requirements.txt
-├── frontend/
-│   └── src/
-│       ├── App.jsx              # Main application component
-│       ├── App.test.jsx         # App integration tests
-│       ├── api/
-│       │   └── game.js          # API client functions
-│       ├── hooks/
-│       │   └── useKeyboard.js   # Keyboard input hook
-│       └── components/
-│           ├── GameGrid/        # Game board component
-│           │   ├── index.jsx
-│           │   ├── GameGrid.css
-│           │   └── GameGrid.test.jsx
-│           └── Keyboard/        # On-screen keyboard
-│               ├── index.jsx
-│               ├── Keyboard.css
-│               └── Keyboard.test.jsx
-├── docs/
-│   ├── DESIGN.md                # Architecture and design decisions
-│   ├── REQUIREMENTS.md          # Requirements traceability matrix
-│   └── TODO.md                  # Future improvements
-└── README.md
-```
+---
 
 ## Quick Start
 
-### Backend
 ```bash
-cd backend
-python -m venv venv
-source venv/bin/activate
+# Backend
+cd backend && python -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
+uvicorn app.main:app --port 8000
+
+# Frontend (new terminal)
+cd frontend && npm install && npm run dev
 ```
 
-### Frontend
-```bash
-cd frontend
-npm install
-npm run dev
+Open http://localhost:5173
+
+---
+
+## Architecture
+
+```
+backend/app/
+├── routes/games.py      # API endpoints
+├── services/
+│   ├── feedback.py      # Two-pass scoring algorithm
+│   ├── words.py         # Validation + random selection
+│   └── game_service.py  # Game entity + Repository
+└── models/              # Pydantic schemas
+
+frontend/src/
+├── api/                 # HTTP client
+├── hooks/               # useKeyboard
+└── components/          # GameGrid, Keyboard (co-located tests)
 ```
 
-## Running Tests
+---
 
-### Backend (27 tests)
-```bash
-cd backend
-source venv/bin/activate
-PYTHONPATH=. pytest tests/ -v
-```
+## Key Design Decisions
 
-### Frontend (18 tests)
-```bash
-cd frontend
-npm test
-```
+| Decision | Rationale |
+|----------|-----------|
+| **In-memory storage** | Appropriate for assessment; Repository pattern allows easy swap to Redis/Postgres |
+| **Embedded word lists** | Fast, reliable, matches real Wordle (no external API dependency) |
+| **Two-pass feedback** | Correctly handles duplicate letters (greens first, then yellows) |
+| **REST over WebSocket** | Sufficient for turn-based single-player; WebSocket warranted for multiplayer |
 
-## API Endpoints
+See [DESIGN.md](docs/DESIGN.md) for full tradeoff analysis.
+
+---
+
+## API
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/games` | Create a new game |
-| POST | `/games/{id}/guesses` | Submit a guess |
+| POST | `/games` | Create game (word_length: 5-8) |
+| POST | `/games/{id}/guesses` | Submit guess → feedback |
 | GET | `/games/{id}` | Get game state |
-| GET | `/health` | Health check |
 
-## Features
+---
 
-- Configurable word length (5-8 letters)
-- Dynamic max guesses (word_length + 1)
-- Correct duplicate letter handling
-- Responsive design (mobile + desktop)
-- Physical and on-screen keyboard support
-- Win/lose states with target reveal
+## Tests
 
-## Documentation
+```bash
+# Backend (27 tests)
+cd backend && PYTHONPATH=. pytest tests/ -v
 
-- [Design Document](docs/DESIGN.md) - Architecture, tradeoffs, alternatives
-- [Requirements](docs/REQUIREMENTS.md) - Test traceability matrix
-- [TODO](docs/TODO.md) - Future improvements
+# Frontend (18 tests)
+cd frontend && npm test
+```
+
+**45 tests total** covering feedback algorithm, API contracts, and UI components.
+
+---
+
+## What's Intentionally Deferred
+
+| Item | Rationale |
+|------|-----------|
+| TypeScript | Starter was JS; conversion adds risk without functional benefit |
+| E2E tests | Unit + integration cover correctness; E2E for production confidence |
+| Auth/persistence | In-memory sufficient for demo; abstractions allow easy extension |
+
+See [TODO.md](docs/TODO.md) for production roadmap.
