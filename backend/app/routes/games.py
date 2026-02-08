@@ -1,38 +1,28 @@
 import uuid
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import APIRouter, HTTPException
 
-from models import (
-    CreateGameRequest, CreateGameResponse, SubmitGuessRequest, 
-    SubmitGuessResponse, GameStateResponse, Guess, GameStatus
+from app.models import (
+    CreateGameRequest, CreateGameResponse,
+    SubmitGuessRequest, SubmitGuessResponse,
+    GameStateResponse, Guess, GameStatus
 )
-from game import Game
-from store import store
-from words import is_valid_word, get_random_target
-from feedback import compute_feedback
-
-app = FastAPI()
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+from app.services import (
+    Game, game_repository,
+    is_valid_word, get_random_target, compute_feedback
 )
 
-@app.get("/health")
-def health_check():
-    return {"status": "healthy"}
+router = APIRouter(prefix="/games", tags=["games"])
 
-@app.post("/games", response_model=CreateGameResponse)
+
+@router.post("", response_model=CreateGameResponse)
 def create_game(req: CreateGameRequest):
+    """Create a new Wordle game with the specified word length."""
     game = Game(
         id=str(uuid.uuid4()),
         word_length=req.word_length,
         target_word=get_random_target(req.word_length),
     )
-    store.save(game)
+    game_repository.save(game)
     return CreateGameResponse(
         id=game.id,
         word_length=game.word_length,
@@ -40,9 +30,11 @@ def create_game(req: CreateGameRequest):
         status=game.status,
     )
 
-@app.post("/games/{game_id}/guesses", response_model=SubmitGuessResponse)
+
+@router.post("/{game_id}/guesses", response_model=SubmitGuessResponse)
 def submit_guess(game_id: str, req: SubmitGuessRequest):
-    game = store.get(game_id)
+    """Submit a guess for an existing game."""
+    game = game_repository.get(game_id)
     if not game:
         raise HTTPException(status_code=404, detail="Game not found")
     
@@ -52,7 +44,10 @@ def submit_guess(game_id: str, req: SubmitGuessRequest):
     word = req.word.lower()
     
     if len(word) != game.word_length:
-        raise HTTPException(status_code=400, detail=f"Word must be {game.word_length} letters")
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Word must be {game.word_length} letters"
+        )
     
     if not is_valid_word(word, game.word_length):
         raise HTTPException(status_code=400, detail="Not a valid word")
@@ -61,12 +56,13 @@ def submit_guess(game_id: str, req: SubmitGuessRequest):
     guess = Guess(word=word, feedback=feedback)
     game.guesses.append(guess)
     
+    # Check win/lose conditions
     if word == game.target_word.lower():
         game.status = GameStatus.WON
     elif game.guesses_remaining == 0:
         game.status = GameStatus.LOST
     
-    store.save(game)
+    game_repository.save(game)
     
     return SubmitGuessResponse(
         word=word,
@@ -75,9 +71,11 @@ def submit_guess(game_id: str, req: SubmitGuessRequest):
         guesses_remaining=game.guesses_remaining,
     )
 
-@app.get("/games/{game_id}", response_model=GameStateResponse)
+
+@router.get("/{game_id}", response_model=GameStateResponse)
 def get_game(game_id: str):
-    game = store.get(game_id)
+    """Retrieve the current state of a game."""
+    game = game_repository.get(game_id)
     if not game:
         raise HTTPException(status_code=404, detail="Game not found")
     

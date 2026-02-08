@@ -1,14 +1,14 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import './App.css'
 import GameGrid from './components/GameGrid'
 import Keyboard from './components/Keyboard'
+import { createGame, submitGuess } from './api'
+import { useKeyboard } from './hooks'
 
-const API_URL = 'http://localhost:8000'
+const STATUS_PRIORITY = { correct: 3, present: 2, absent: 1 }
 
 function App() {
-  const [gameId, setGameId] = useState(null)
-  const [wordLength, setWordLength] = useState(5)
-  const [maxGuesses, setMaxGuesses] = useState(6)
+  const [game, setGame] = useState(null)
   const [guesses, setGuesses] = useState([])
   const [currentGuess, setCurrentGuess] = useState('')
   const [gameStatus, setGameStatus] = useState('idle')
@@ -18,94 +18,67 @@ function App() {
 
   const startGame = async (length) => {
     try {
-      const res = await fetch(`${API_URL}/games`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ word_length: length })
-      })
-      const data = await res.json()
-      setGameId(data.id)
-      setWordLength(data.word_length)
-      setMaxGuesses(data.max_guesses)
+      const data = await createGame(length)
+      setGame(data)
       setGuesses([])
       setCurrentGuess('')
       setGameStatus('in_progress')
       setTargetWord(null)
       setError('')
       setLetterStatuses({})
-    } catch (e) {
+    } catch {
       setError('Failed to start game')
     }
   }
 
-  const submitGuess = async () => {
-    if (currentGuess.length !== wordLength) return
+  const handleSubmit = async () => {
+    if (!game || currentGuess.length !== game.word_length) return
     
-    try {
-      const res = await fetch(`${API_URL}/games/${gameId}/guesses`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ word: currentGuess })
+    const { ok, data } = await submitGuess(game.id, currentGuess)
+    
+    if (!ok) {
+      setError(data.detail)
+      return
+    }
+    
+    setGuesses(prev => [...prev, { word: data.word, feedback: data.feedback }])
+    setCurrentGuess('')
+    setError('')
+    
+    // Update letter statuses (best status wins)
+    setLetterStatuses(prev => {
+      const updated = { ...prev }
+      data.feedback.forEach(({ letter, status }) => {
+        if (!updated[letter] || STATUS_PRIORITY[status] > STATUS_PRIORITY[updated[letter]]) {
+          updated[letter] = status
+        }
       })
-      
-      if (!res.ok) {
-        const err = await res.json()
-        setError(err.detail)
-        return
-      }
-      
-      const data = await res.json()
-      const newGuess = { word: data.word, feedback: data.feedback }
-      setGuesses(prev => [...prev, newGuess])
-      setCurrentGuess('')
-      setError('')
-      
-      // Update letter statuses (best status wins)
-      const priority = { correct: 3, present: 2, absent: 1 }
-      setLetterStatuses(prev => {
-        const updated = { ...prev }
-        data.feedback.forEach(({ letter, status }) => {
-          if (!updated[letter] || priority[status] > priority[updated[letter]]) {
-            updated[letter] = status
-          }
-        })
-        return updated
-      })
-      
-      if (data.game_status !== 'in_progress') {
-        setGameStatus(data.game_status)
-        // Fetch final state to get target word
-        const stateRes = await fetch(`${API_URL}/games/${gameId}`)
-        const stateData = await stateRes.json()
-        setTargetWord(stateData.target_word)
-      }
-    } catch (e) {
-      setError('Failed to submit guess')
+      return updated
+    })
+    
+    if (data.game_status !== 'in_progress') {
+      setGameStatus(data.game_status)
+      // Fetch target word on game end
+      const res = await fetch(`http://localhost:8000/games/${game.id}`)
+      const state = await res.json()
+      setTargetWord(state.target_word)
     }
   }
 
   const handleKey = useCallback((key) => {
-    if (gameStatus !== 'in_progress') return
-    
+    if (gameStatus !== 'in_progress' || !game) return
     setError('')
     
     if (key === 'Enter') {
-      submitGuess()
+      handleSubmit()
     } else if (key === 'Backspace') {
       setCurrentGuess(prev => prev.slice(0, -1))
-    } else if (/^[a-zA-Z]$/.test(key) && currentGuess.length < wordLength) {
-      setCurrentGuess(prev => prev + key.toLowerCase())
+    } else if (/^[a-z]$/.test(key) && currentGuess.length < game.word_length) {
+      setCurrentGuess(prev => prev + key)
     }
-  }, [gameStatus, currentGuess, wordLength, submitGuess])
+  }, [gameStatus, game, currentGuess, handleSubmit])
 
-  useEffect(() => {
-    const onKeyDown = (e) => {
-      if (e.ctrlKey || e.metaKey || e.altKey) return
-      handleKey(e.key)
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [handleKey])
+  useKeyboard(handleKey, gameStatus === 'in_progress')
 
   // Build display guesses (including current input)
   const displayGuesses = [...guesses]
@@ -131,19 +104,17 @@ function App() {
         </div>
       )}
       
-      {gameStatus !== 'idle' && (
+      {game && gameStatus !== 'idle' && (
         <>
           <GameGrid 
             guesses={displayGuesses} 
-            wordLength={wordLength} 
-            maxGuesses={maxGuesses} 
+            wordLength={game.word_length} 
+            maxGuesses={game.max_guesses} 
           />
           
           {error && <p className="error">{error}</p>}
           
-          {gameStatus === 'won' && (
-            <p className="message success">You won! 🎉</p>
-          )}
+          {gameStatus === 'won' && <p className="message success">You won! 🎉</p>}
           
           {gameStatus === 'lost' && (
             <p className="message failure">

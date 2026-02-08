@@ -1,12 +1,11 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
-import Keyboard from '../components/Keyboard'
+import Keyboard from './index'
 
 describe('Keyboard', () => {
   it('renders all letter keys', () => {
     render(<Keyboard onKey={() => {}} letterStatuses={{}} />)
     
-    // Keys are lowercase in the component
     'qwertyuiopasdfghjklzxcvbnm'.split('').forEach(letter => {
       expect(screen.getByText(letter)).toBeInTheDocument()
     })
@@ -44,11 +43,7 @@ describe('Keyboard', () => {
   })
 
   it('applies correct status class to keys', () => {
-    const letterStatuses = {
-      c: 'correct',
-      r: 'present',
-      a: 'absent',
-    }
+    const letterStatuses = { c: 'correct', r: 'present', a: 'absent' }
     render(<Keyboard onKey={() => {}} letterStatuses={letterStatuses} />)
     
     expect(screen.getByText('c')).toHaveClass('correct')

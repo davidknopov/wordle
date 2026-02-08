@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import GameGrid from '../components/GameGrid'
+import GameGrid from './index'
 
 describe('GameGrid', () => {
   it('renders correct number of rows based on maxGuesses', () => {

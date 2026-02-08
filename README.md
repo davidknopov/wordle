@@ -1,26 +1,64 @@
 # Wordle Clone
 
-A full-stack Wordle implementation with configurable word lengths (5-8 letters), built with FastAPI and React.
+A full-stack Wordle clone with configurable word lengths (5-8 letters).
 
-## Features
+## Project Structure
 
-- 🎮 **Multiple Games**: Create and play as many games as you want
-- 📏 **Configurable Word Length**: Choose 5-8 letter words (with N+1 guesses)
-- ⌨️ **Dual Input**: On-screen keyboard and physical keyboard support
-- 🎨 **Responsive Design**: Works on desktop and mobile
-- ✅ **52 Tests**: Comprehensive test coverage
+```
+wordle/
+├── backend/
+│   ├── app/
+│   │   ├── main.py              # FastAPI application entry point
+│   │   ├── routes/
+│   │   │   └── games.py         # Game API endpoints
+│   │   ├── models/
+│   │   │   ├── game.py          # Domain models (LetterStatus, Guess)
+│   │   │   └── schemas.py       # Pydantic request/response schemas
+│   │   ├── services/
+│   │   │   ├── feedback.py      # Two-pass feedback algorithm
+│   │   │   ├── words.py         # Word validation and selection
+│   │   │   └── game_service.py  # Game entity and repository
+│   │   └── data/
+│   │       └── words_*.txt      # Word lists by length
+│   ├── tests/
+│   │   ├── test_api.py          # API integration tests
+│   │   ├── test_feedback.py     # Feedback algorithm unit tests
+│   │   └── test_words.py        # Word service unit tests
+│   └── requirements.txt
+├── frontend/
+│   └── src/
+│       ├── App.jsx              # Main application component
+│       ├── App.test.jsx         # App integration tests
+│       ├── api/
+│       │   └── game.js          # API client functions
+│       ├── hooks/
+│       │   └── useKeyboard.js   # Keyboard input hook
+│       └── components/
+│           ├── GameGrid/        # Game board component
+│           │   ├── index.jsx
+│           │   ├── GameGrid.css
+│           │   └── GameGrid.test.jsx
+│           └── Keyboard/        # On-screen keyboard
+│               ├── index.jsx
+│               ├── Keyboard.css
+│               └── Keyboard.test.jsx
+├── docs/
+│   ├── DESIGN.md                # Architecture and design decisions
+│   ├── REQUIREMENTS.md          # Requirements traceability matrix
+│   └── TODO.md                  # Future improvements
+└── README.md
+```
 
 ## Quick Start
 
 ### Backend
 ```bash
 cd backend
-python3 -m venv venv
+python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
-uvicorn main:app --reload
+uvicorn app.main:app --reload --port 8000
 ```
-API available at http://localhost:8000
 
 ### Frontend
 ```bash
@@ -28,72 +66,42 @@ cd frontend
 npm install
 npm run dev
 ```
-App available at http://localhost:5173
+
+## Running Tests
+
+### Backend (27 tests)
+```bash
+cd backend
+source venv/bin/activate
+PYTHONPATH=. pytest tests/ -v
+```
+
+### Frontend (18 tests)
+```bash
+cd frontend
+npm test
+```
 
 ## API Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/games` | Create new game with `{word_length: 5-8}` |
-| POST | `/games/{id}/guesses` | Submit guess, returns feedback |
+| POST | `/games` | Create a new game |
+| POST | `/games/{id}/guesses` | Submit a guess |
 | GET | `/games/{id}` | Get game state |
+| GET | `/health` | Health check |
 
-## Project Structure
+## Features
 
-```
-wordle-starter/
-├── backend/
-│   ├── main.py          # FastAPI routes
-│   ├── models.py        # Pydantic schemas
-│   ├── game.py          # Game model
-│   ├── feedback.py      # Scoring algorithm
-│   ├── words.py         # Word validation
-│   ├── store.py         # Game storage
-│   ├── test_*.py        # Backend tests (34)
-│   └── words_*.txt      # Word lists
-├── frontend/
-│   ├── src/
-│   │   ├── App.jsx      # Main component
-│   │   ├── components/  # GameGrid, Keyboard
-│   │   └── test/        # Frontend tests (18)
-│   └── package.json
-├── DESIGN.md            # Architecture & tradeoffs
-├── REQUIREMENTS.md      # Test traceability matrix
-└── TODO.md              # Future improvements
-```
+- Configurable word length (5-8 letters)
+- Dynamic max guesses (word_length + 1)
+- Correct duplicate letter handling
+- Responsive design (mobile + desktop)
+- Physical and on-screen keyboard support
+- Win/lose states with target reveal
 
-## Running Tests
+## Documentation
 
-```bash
-# Backend (34 tests)
-cd backend && source venv/bin/activate && pytest -v
-
-# Frontend (18 tests)
-cd frontend && npm test
-
-# All tests
-cd backend && source venv/bin/activate && pytest && cd ../frontend && npm test
-```
-
-## Design Decisions
-
-See [DESIGN.md](DESIGN.md) for detailed architecture documentation including:
-- API design rationale
-- Storage layer tradeoffs
-- Feedback algorithm explanation
-- Frontend state management choices
-
-## Game Rules
-
-1. 🟩 **Green** = Letter is correct and in the right position
-2. 🟨 **Yellow** = Letter is in the word but wrong position  
-3. ⬜ **Gray** = Letter is not in the word
-4. Words must be valid English words
-5. Answers are never plural
-6. You get N+1 guesses for an N-letter word
-
-## Tech Stack
-
-- **Backend**: Python, FastAPI, Pydantic
-- **Frontend**: React, Vite, Vitest
-- **Testing**: pytest, React Testing Library
+- [Design Document](docs/DESIGN.md) - Architecture, tradeoffs, alternatives
+- [Requirements](docs/REQUIREMENTS.md) - Test traceability matrix
+- [TODO](docs/TODO.md) - Future improvements

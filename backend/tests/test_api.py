@@ -1,8 +1,9 @@
 import pytest
 from fastapi.testclient import TestClient
-from main import app
+from app.main import app
 
 client = TestClient(app)
+
 
 class TestCreateGame:
     def test_create_game_5_letters(self):
@@ -29,12 +30,10 @@ class TestCreateGame:
         res = client.post('/games', json={'word_length': 9})
         assert res.status_code == 422
 
+
 class TestSubmitGuess:
     def test_submit_valid_guess(self):
-        # Create game
         game = client.post('/games', json={'word_length': 5}).json()
-        
-        # Submit guess
         res = client.post(f"/games/{game['id']}/guesses", json={'word': 'crane'})
         assert res.status_code == 200
         data = res.json()
@@ -58,6 +57,7 @@ class TestSubmitGuess:
         res = client.post('/games/nonexistent-id/guesses', json={'word': 'crane'})
         assert res.status_code == 404
 
+
 class TestGetGame:
     def test_get_game_state(self):
         game = client.post('/games', json={'word_length': 5}).json()
@@ -68,12 +68,10 @@ class TestGetGame:
         data = res.json()
         assert len(data['guesses']) == 1
         assert data['guesses'][0]['word'] == 'crane'
-        assert data['target_word'] is None  # Hidden during game
+        assert data['target_word'] is None
     
     def test_target_revealed_on_loss(self):
         game = client.post('/games', json={'word_length': 5}).json()
-        
-        # Use all 6 guesses with wrong words
         words = ['crane', 'slate', 'audio', 'piano', 'about', 'youth']
         for word in words:
             client.post(f"/games/{game['id']}/guesses", json={'word': word})
@@ -87,16 +85,14 @@ class TestGetGame:
         res = client.get('/games/nonexistent-id')
         assert res.status_code == 404
 
+
 class TestGameFlow:
     def test_cannot_guess_after_game_over(self):
         game = client.post('/games', json={'word_length': 5}).json()
-        
-        # Exhaust all guesses
         words = ['crane', 'slate', 'audio', 'piano', 'about', 'youth']
         for word in words:
             client.post(f"/games/{game['id']}/guesses", json={'word': word})
         
-        # Try one more
         res = client.post(f"/games/{game['id']}/guesses", json={'word': 'extra'})
         assert res.status_code == 400
         assert 'already over' in res.json()['detail']

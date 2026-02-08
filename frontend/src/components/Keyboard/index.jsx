@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types'
 import './Keyboard.css'
 
 const ROWS = [
@@ -28,4 +29,11 @@ export default function Keyboard({ onKey, letterStatuses }) {
       ))}
     </div>
   )
+}
+
+Keyboard.propTypes = {
+  onKey: PropTypes.func.isRequired,
+  letterStatuses: PropTypes.objectOf(
+    PropTypes.oneOf(['correct', 'present', 'absent', ''])
+  ).isRequired,
 }

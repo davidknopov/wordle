@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types'
 import './GameGrid.css'
 
 export default function GameGrid({ guesses, wordLength, maxGuesses }) {
@@ -19,11 +20,7 @@ export default function GameGrid({ guesses, wordLength, maxGuesses }) {
       )
     }
     
-    rows.push(
-      <div key={i} className="row">
-        {cells}
-      </div>
-    )
+    rows.push(<div key={i} className="row">{cells}</div>)
   }
   
   return (
@@ -31,4 +28,16 @@ export default function GameGrid({ guesses, wordLength, maxGuesses }) {
       {rows}
     </div>
   )
+}
+
+GameGrid.propTypes = {
+  guesses: PropTypes.arrayOf(PropTypes.shape({
+    word: PropTypes.string.isRequired,
+    feedback: PropTypes.arrayOf(PropTypes.shape({
+      letter: PropTypes.string.isRequired,
+      status: PropTypes.oneOf(['correct', 'present', 'absent']).isRequired,
+    })).isRequired,
+  })).isRequired,
+  wordLength: PropTypes.number.isRequired,
+  maxGuesses: PropTypes.number.isRequired,
 }
