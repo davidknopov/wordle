@@ -1,1 +1,1 @@
-export { createGame, submitGuess } from './game'
+export { createGame, submitGuess, getGame } from './game'

@@ -18,3 +18,9 @@ export async function submitGuess(gameId, word) {
   })
   return { ok: res.ok, data: await res.json() }
 }
+
+export async function getGame(gameId) {
+  const res = await fetch(`${API_BASE}/games/${gameId}`)
+  if (!res.ok) throw new Error('Failed to get game')
+  return res.json()
+}

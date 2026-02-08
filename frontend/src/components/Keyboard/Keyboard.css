@@ -33,6 +33,9 @@
   flex: 1.5;
   max-width: 75px;
   font-size: clamp(10px, 2vw, 12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .key:hover {
@@ -49,6 +52,11 @@
 
 .key.present {
   background-color: #b59f3b;
+}
+
+.keyboard.disabled {
+  opacity: 0.6;
+  pointer-events: none;
 }
 
 .key.absent {

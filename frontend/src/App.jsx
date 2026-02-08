@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react'
 import './App.css'
 import GameGrid from './components/GameGrid'
 import Keyboard from './components/Keyboard'
-import { createGame, submitGuess } from './api'
+import { createGame, submitGuess, getGame } from './api'
 import { useKeyboard } from './hooks'
 
 const STATUS_PRIORITY = { correct: 3, present: 2, absent: 1 }
@@ -15,6 +15,7 @@ function App() {
   const [targetWord, setTargetWord] = useState(null)
   const [error, setError] = useState('')
   const [letterStatuses, setLetterStatuses] = useState({})
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const startGame = async (length) => {
     try {
@@ -31,42 +32,47 @@ function App() {
     }
   }
 
-  const handleSubmit = async () => {
-    if (!game || currentGuess.length !== game.word_length) return
+  const handleSubmit = useCallback(async () => {
+    if (!game || currentGuess.length !== game.word_length || isSubmitting) return
     
-    const { ok, data } = await submitGuess(game.id, currentGuess)
-    
-    if (!ok) {
-      setError(data.detail)
-      return
-    }
-    
-    setGuesses(prev => [...prev, { word: data.word, feedback: data.feedback }])
-    setCurrentGuess('')
-    setError('')
-    
-    // Update letter statuses (best status wins)
-    setLetterStatuses(prev => {
-      const updated = { ...prev }
-      data.feedback.forEach(({ letter, status }) => {
-        if (!updated[letter] || STATUS_PRIORITY[status] > STATUS_PRIORITY[updated[letter]]) {
-          updated[letter] = status
-        }
+    setIsSubmitting(true)
+    try {
+      const { ok, data } = await submitGuess(game.id, currentGuess)
+      
+      if (!ok) {
+        setError(data.detail)
+        return
+      }
+      
+      setGuesses(prev => [...prev, { word: data.word, feedback: data.feedback }])
+      setCurrentGuess('')
+      setError('')
+      
+      // Update letter statuses (best status wins)
+      setLetterStatuses(prev => {
+        const updated = { ...prev }
+        data.feedback.forEach(({ letter, status }) => {
+          if (!updated[letter] || STATUS_PRIORITY[status] > STATUS_PRIORITY[updated[letter]]) {
+            updated[letter] = status
+          }
+        })
+        return updated
       })
-      return updated
-    })
-    
-    if (data.game_status !== 'in_progress') {
-      setGameStatus(data.game_status)
-      // Fetch target word on game end
-      const res = await fetch(`http://localhost:8000/games/${game.id}`)
-      const state = await res.json()
-      setTargetWord(state.target_word)
+      
+      if (data.game_status !== 'in_progress') {
+        setGameStatus(data.game_status)
+        const state = await getGame(game.id)
+        setTargetWord(state.target_word)
+      }
+    } catch {
+      setError('Failed to submit guess')
+    } finally {
+      setIsSubmitting(false)
     }
-  }
+  }, [game, currentGuess, isSubmitting])
 
   const handleKey = useCallback((key) => {
-    if (gameStatus !== 'in_progress' || !game) return
+    if (gameStatus !== 'in_progress' || !game || isSubmitting) return
     setError('')
     
     if (key === 'Enter') {
@@ -76,9 +82,9 @@ function App() {
     } else if (/^[a-z]$/.test(key) && currentGuess.length < game.word_length) {
       setCurrentGuess(prev => prev + key)
     }
-  }, [gameStatus, game, currentGuess, handleSubmit])
+  }, [gameStatus, game, currentGuess, isSubmitting, handleSubmit])
 
-  useKeyboard(handleKey, gameStatus === 'in_progress')
+  useKeyboard(handleKey, gameStatus === 'in_progress' && !isSubmitting)
 
   // Build display guesses (including current input)
   const displayGuesses = [...guesses]
@@ -123,7 +129,7 @@ function App() {
           )}
           
           {gameStatus === 'in_progress' && (
-            <Keyboard onKey={handleKey} letterStatuses={letterStatuses} />
+            <Keyboard onKey={handleKey} letterStatuses={letterStatuses} disabled={isSubmitting} />
           )}
           
           {gameStatus !== 'in_progress' && (

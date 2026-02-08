@@ -12,27 +12,35 @@ A full-stack Wordle implementation with configurable word lengths (5-8 letters),
 ┌─────────────────────────────────────────────────────────────────┐
 │                         Frontend (React)                         │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
-│  │   App.jsx   │  │  GameGrid   │  │       Keyboard          │  │
+│  │   App.jsx   │  │  GameGrid/  │  │       Keyboard/         │  │
 │  │  (state +   │  │  (display)  │  │  (input + status)       │  │
 │  │   logic)    │  │             │  │                         │  │
 │  └──────┬──────┘  └─────────────┘  └─────────────────────────┘  │
 │         │                                                        │
-│         │ HTTP (fetch)                                           │
+│  ┌──────┴──────┐  ┌─────────────┐                               │
+│  │   api/      │  │   hooks/    │                               │
+│  │  (HTTP)     │  │ (keyboard)  │                               │
+│  └──────┬──────┘  └─────────────┘                               │
 └─────────┼───────────────────────────────────────────────────────┘
           │
-          ▼
+          ▼ HTTP (fetch)
 ┌─────────────────────────────────────────────────────────────────┐
 │                      Backend (FastAPI)                           │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
-│  │   main.py   │  │   game.py   │  │      feedback.py        │  │
-│  │  (routes)   │  │  (model)    │  │  (scoring algorithm)    │  │
-│  └──────┬──────┘  └─────────────┘  └─────────────────────────┘  │
-│         │                                                        │
-│         ▼                                                        │
-│  ┌─────────────┐  ┌─────────────┐                               │
-│  │  store.py   │  │  words.py   │                               │
-│  │ (in-memory) │  │ (word lists)│                               │
-│  └─────────────┘  └─────────────┘                               │
+│  ┌─────────────────────────────────────────────────────────────┐│
+│  │  app/                                                        ││
+│  │  ├── main.py          (FastAPI app + middleware)            ││
+│  │  ├── routes/                                                 ││
+│  │  │   └── games.py     (API endpoints)                       ││
+│  │  ├── models/                                                 ││
+│  │  │   ├── game.py      (domain: LetterStatus, Guess)         ││
+│  │  │   └── schemas.py   (Pydantic request/response)           ││
+│  │  ├── services/                                               ││
+│  │  │   ├── feedback.py  (scoring algorithm)                   ││
+│  │  │   ├── words.py     (validation + selection)              ││
+│  │  │   └── game_service.py (Game entity + Repository)         ││
+│  │  └── data/                                                   ││
+│  │      └── words_*.txt  (embedded word lists)                 ││
+│  └─────────────────────────────────────────────────────────────┘│
 └─────────────────────────────────────────────────────────────────┘
 ```
 
