@@ -104,15 +104,18 @@ LetterFeedback:
 
 ## Storage Layer
 
-### Chosen: In-Memory Dictionary
+### Chosen: In-Memory with Repository Pattern
 
 ```python
-class GameStore:
+class GameRepository(Protocol):
+    """Interface for game persistence."""
+    def save(self, game: Game) -> None: ...
+    def get(self, game_id: str) -> Game | None: ...
+
+class InMemoryGameRepository:
+    """In-memory implementation."""
     def __init__(self):
         self._games: dict[str, Game] = {}
-    
-    def save(self, game: Game) -> None
-    def get(self, game_id: str) -> Game | None
 ```
 
 ### Tradeoffs
@@ -199,11 +202,12 @@ Could mark all matches then adjust, but two-pass is clearer and matches how huma
 ### State Management: React useState
 
 ```javascript
-const [gameId, setGameId] = useState(null)
+const [game, setGame] = useState(null)
 const [guesses, setGuesses] = useState([])
 const [currentGuess, setCurrentGuess] = useState('')
 const [gameStatus, setGameStatus] = useState('idle')
 const [letterStatuses, setLetterStatuses] = useState({})
+const [isSubmitting, setIsSubmitting] = useState(false)
 ```
 
 ### Tradeoffs

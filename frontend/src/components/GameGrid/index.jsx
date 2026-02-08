@@ -35,7 +35,7 @@ GameGrid.propTypes = {
     word: PropTypes.string.isRequired,
     feedback: PropTypes.arrayOf(PropTypes.shape({
       letter: PropTypes.string.isRequired,
-      status: PropTypes.oneOf(['correct', 'present', 'absent']).isRequired,
+      status: PropTypes.oneOf(['correct', 'present', 'absent', '']).isRequired,
     })).isRequired,
   })).isRequired,
   wordLength: PropTypes.number.isRequired,
